@@ -17,7 +17,6 @@ window.onload = async function () {
   eventBus.on('download', () => {
     av.source ? av.download() : dv.alert()
   })
-
   eventBus.on('progress', () => {})
 
 }

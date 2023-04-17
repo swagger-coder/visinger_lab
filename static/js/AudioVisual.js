@@ -171,38 +171,6 @@ class AudioVisual {
       this.endNature = false
       this.source.stop()
       this.started = false
-      // let { ac, analyser } = this
-      // this.source = ac.createBufferSource()
-      // // let ab_tmp = this.abf.slice(0)
-      // ac.decodeAudioData(this.abf.slice(0), buffer => {
-      //   /**
-      //    * 可能会出现在解析AudioDta的时候切换了资源，这里对比一下播放的资源是否一致
-      //    * 在decodeAudioData的时候，可能切换了资源，会调用stop函数，这里source可能会出现为null
-      //    */
-      //   // if (songInfo.url !== this.songInfo.url || !this.source) return
-        
-      //   this.beginTime = (new Date()).getTime() / 1000
-      //   this.source.buffer = buffer
-      //   this.buffer = buffer
-      //   this.source.connect(analyser)
-      //   this.source.start(0, this.currentTime)
-      //   this.source.onended = () => {
-      //     this.onended && this.onended()
-      //     this.decodeAudioData(this.abf.slice(0))
-      //     console.log('onended')
-      //   }
-      //   // eventBus.emit('init', { title: this.singer + " - " + this.song, lyric:1, duration: this.source.buffer.duration})
-      //   // let dom = document.querySelector('.icon-play1')
-      //   // dom.classList.add('click')
-      //   this.loading = false
-      //   this.started = true
-      //   this.startTime = this.currentTime
-      //   // this.sourceDuration = buffer.duration
-      //   console.log(ac.currentTime);
-      //   this.refreshUI()
-      // }, error => {
-      //   console.log(error)
-      // })
     })
   }
 
@@ -219,16 +187,13 @@ class AudioVisual {
 
     this.af = AbortFetch()
     this.loading = true
-    
-    // eventBus.emit('init', songInfo)
-    // eventBus.emit('change', {
-    //   state: "loading",
-    //   duration: "00.00",
-    //   currentTime: "00.00",
-    // })
-    // Pause the current playing music before loading the audio and refresh the UI
+    if(this.source){
+      this.source.stop()
+      this.started = false
+    }
 
-    let ab = await this.af.fetch("/wavs?"+"singer="+this.singer+"&song="+this.song+"&mode="+this.mode)
+    // "/wavs?"+"singer="+this.singer+"&song="+this.song+"&mode="+this.mode
+    let ab = await this.af.fetch("https://qiniu.sukoshi.xyz/cloud-music/Aimer%20-%20%E8%8A%B1%E3%81%B2%E3%82%99%E3%82%89%E3%81%9F%E3%81%A1%E3%81%AE%E3%83%9E%E3%83%BC%E3%83%81.mp3")
       .then(result => result.arrayBuffer())
       .catch(({ name }) => {
         if (name === 'AbortError') return console.log('cancel')
@@ -241,57 +206,17 @@ class AudioVisual {
         return alert("初始化数据失败，请尝试刷新页面（◔‸◔）")
       })
     console.log(ab)
-    this.abf = ab.slice(0) // 必须复制，否则会解析失败
-    console.log(this.abf)
+    this.abf = ab// 必须复制，否则会解析失败
+    console.log()
     if (!ab) return
-    /** 可能会出现在取消请求的时候请求已经请求成功，这里对比一下播放的资源是否一致 */
-    // if (songInfo.url !== this.songInfo.url) return
-
-    let { ac, analyser } = this
-    this.source = ac.createBufferSource()
-    ac.decodeAudioData(ab, buffer => {
-      /**
-       * 可能会出现在解析AudioDta的时候切换了资源，这里对比一下播放的资源是否一致
-       * 在decodeAudioData的时候，可能切换了资源，会调用stop函数，这里source可能会出现为null
-       */
-      // if (songInfo.url !== this.songInfo.url || !this.source) return
-      this.endNature = true
-      this.beginTime = (new Date()).getTime() / 1000
-      this.currentTime = 0
-      
-      this.source.buffer = buffer
-      this.buffer = buffer
-      this.source.connect(analyser)
-      this.source.start(0, this.currentTime)
-      this.source.onended = () => {
-        console.log("onended")
-        this.onended && this.onended()
-        this.decodeAudioData(this.abf.slice(0))
-      }
-      eventBus.emit('init', { title: this.singer + " - " + this.song, lyric:1, duration: this.source.buffer.duration})
-      let dom = document.querySelector('.icon-play1')
-      dom.classList.add('click')
-      this.loading = false
-      this.started = true
-      this.startTime = this.currentTime
-      this.sourceDuration = buffer.duration
-      console.log(ac.currentTime);
-      this.refreshUI()
-    }, error => {
-      console.log(error)
-    })
+    this.decodeAudioData(ab.slice(0), true)
   }
   
-  decodeAudioData(ab) {
+  decodeAudioData(ab, isInit = false) {
     let { ac, analyser } = this
     this.source = ac.createBufferSource()
     ac.decodeAudioData(ab, buffer => {
-      /**
-       * 可能会出现在解析AudioDta的时候切换了资源，这里对比一下播放的资源是否一致
-       * 在decodeAudioData的时候，可能切换了资源，会调用stop函数，这里source可能会出现为null
-       */
-      // if (songInfo.url !== this.songInfo.url || !this.source) return
-      if(this.endNature) {
+      if(isInit || this.endNature) {
         this.currentTime = 0
       }
       this.endNature = true
@@ -303,6 +228,15 @@ class AudioVisual {
       this.source.onended = () => {
         this.onended && this.onended()
         this.decodeAudioData(this.abf.slice(0))
+      }
+      if(isInit) {
+        console.log("init")
+        // lrc: "/lyrics?"+"singer="+this.singer+"&song="+this.song+"&mode="+this.mode
+        // title: this.singer + " - " + this.song
+        eventBus.emit('init', { title: "Aimer - 花びらたちのマーチ", 
+        lrc:"https://qiniu.sukoshi.xyz/cloud-music/Aimer%20-%20%E8%8A%B1%E3%81%B2%E3%82%99%E3%82%89%E3%81%9F%E3%81%A1%E3%81%AE%E3%83%9E%E3%83%BC%E3%83%81.txt", duration: this.source.buffer.duration})
+        let dom = document.querySelector('.icon-play1')
+        dom.classList.add('click')
       }
       this.loading = false
       this.started = true
@@ -326,7 +260,6 @@ class AudioVisual {
       console.log("stopped")
       source.onended = null
       source.stop()
-      // console.log(ac.currentTime)
     }
     this.source = null
     this.started = false
@@ -416,9 +349,6 @@ class AudioVisual {
           duration: source.buffer.duration,
           currentTime: this.currentTime + this.passTime,
         })
-        // if (this.currentTime + this.passTime >= source.buffer.duration){
-          
-        // }
       }
     } catch (error) {
       console.log(error)

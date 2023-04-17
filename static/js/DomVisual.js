@@ -159,15 +159,21 @@ class DomVisual {
         let playProgress = (currentTime / duration) * 100
         let seekBar = this.getDom('#seek-bar', this.domTextMap)
         seekBar.style.width = playProgress + '%';
-        if (currentTime >= this.nextLrcTime()) {
-          this.nextLrc()
+        if (currentTime >= this.nextLrcTime() || currentTime < this.lrcList[this.lrcIndex][0]) {
+          console.log("change2")
+          this.nextLrc(currentTime)
         }
+        
+        // if (currentTime < this.lrcList[this.lrcIndex][0]) {
+        //   this.nextLrc(currentTime)
+        // }
       }
     })
   }
 
   handleInit () {
     eventBus.on('init', ({ title, lrc , duration}) => {
+      console.log('init')
       this.initSongInfo ({ title})
       this.setDomText('#total-time-minute', this.add0(parseInt(Math.max(Math.floor(duration / 60), 0))))
       this.setDomText('#total-time-second', this.add0(parseInt(Math.max(duration % 60, 0))))
@@ -235,16 +241,10 @@ class DomVisual {
     return domMap.get(selector) || null
   }
 
-  initSongInfo ({ title, cover }) {
+  initSongInfo ({ title}) {
     this.lrcList = []
     this.lrcIndex = 0
     this.setDomText('#song-title', title)
-    this.setDomText('#info-state', 'undefined')
-    this.setDomText('#info-duration', '00.00')
-    this.setDomText('#info-current-time', '00.00')
-    this.setDomText('#time-minute', '00')
-    this.setDomText('#time-second', '00')
-    // this.getContainerDom('#info-cover').style = `background-image: url(${cover});`
   }
 
   loadBG () {
@@ -255,6 +255,7 @@ class DomVisual {
   }
 
   async loadData (url) {
+    console.log(url)
     if (!url) {
       this.lrcList = [[0, '当前歌曲暂无歌词，闭上眼睛静静聆听～']]
       this.initLrcDom()
@@ -303,6 +304,8 @@ class DomVisual {
     return lrcList[lrcIndex]
   }
 
+
+
   nextLrcTime () {
     const { lrcIndex, lrcList } = this
     let end = lrcList.length - 1
@@ -311,11 +314,21 @@ class DomVisual {
     return lrcList[nextIndex][0]
   }
 
-  nextLrc () {
+  nextLrc (currentTime) {
     const { lrcIndex, lrcList } = this
-    if (lrcIndex >= lrcList.length - 1) return
+    // if (lrcIndex >= lrcList.length - 1) return
     let lrcContainer = this.getContainerDom('#music-lrc')
-    this.lrcIndex = this.lrcIndex + 1
+    // 查找当前歌词
+    for (let i = 0; i < lrcList.length; i++) {
+      let row = lrcList[i]
+      if (i === lrcList.length - 1) {
+        this.lrcIndex = i
+        break;
+      } else if (row[0] <= currentTime && currentTime < lrcList[i + 1][0]){
+        this.lrcIndex = i
+        break;
+      }
+    }
     lrcContainer.querySelectorAll('p').forEach((p, index) => {
       if (index !== this.lrcIndex) {
         p.classList.remove('current')
@@ -325,6 +338,7 @@ class DomVisual {
     })
     this.rollLrc()
   }
+
   
   add0 (n) {
     return n > 9 ? n : `0${n}`

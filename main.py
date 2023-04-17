@@ -17,13 +17,7 @@ def index():
 
 @app.route("/playlist")
 def get_playlist():
-    data = [{
-        'name': 'John',
-        'age': 30,
-        'city': 'New York'
-    }, {'name': 'John',
-        'age': 30,
-        'city': 'New York'}]
+    data = [{}]
     return jsonify(data)
 
 @app.route("/wavs")
@@ -31,16 +25,19 @@ def get_wav():
     singer = request.args.get("singer")
     song = request.args.get("song")
     mode = request.args.get("mode")
-    wavs = "static/wavs/nomidi_B_我多想说再见啊_21_m.wav"
+    wavs = "static/wavs/我多想说再见啊.wav"
     return send_file(wavs)
-    try:
-        with open(wavs, "rb") as f:
-            # print(Response(f.read(), mimetype="audio/mp3"))
-            return Response(f.read(), mimetype="audio/wav")
-    except:
-        return abort(500)
 
-
+@app.route("/lyrics")
+def get_lyric():
+    singer = request.args.get("singer")
+    song = request.args.get("song")
+    mode = request.args.get("mode")
+    lyric_dir = "static/lyrics/我多想说再见啊.txt"
+    with open(lyric_dir, 'r', encoding='utf-8') as f:
+        lyric = f.read()
+        print(lyric)
+    return Response(lyric, mimetype="text/plain")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8093, debug=True)
+    app.run(host="0.0.0.0", port=8072, debug=True)
