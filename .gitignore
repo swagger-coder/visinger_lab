@@ -1,1 +1,3 @@
 static/wavs/*
+.DS_Store
+.gitignore
